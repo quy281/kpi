@@ -1,50 +1,44 @@
 import { useState } from 'react';
-import PlanView from './components/PlanView';
-import TaskTracker from './components/TaskTracker';
-import FinanceView from './components/FinanceView';
-import ReferenceView from './components/ReferenceView';
+import TongQuanView from './components/TongQuanView.jsx';
+import KinhDoanhView from './components/KinhDoanhView.jsx';
+import MarketingView from './components/MarketingView.jsx';
+import LoTrinhView from './components/LoTrinhView.jsx';
+import TasksView from './components/TasksView.jsx';
 import './styles/index.css';
 
 const TABS = [
-  { id: 'plan', icon: '📋', label: 'Kế hoạch' },
+  { id: 'tongquan', icon: '📋', label: 'Tổng Quan' },
+  { id: 'kinhdoanh', icon: '💰', label: 'Kinh Doanh' },
+  { id: 'marketing', icon: '📣', label: 'Marketing' },
+  { id: 'lotrinh', icon: '📅', label: 'Lộ Trình' },
   { id: 'tasks', icon: '✅', label: 'Tasks' },
-  { id: 'finance', icon: '📊', label: 'Tài chính' },
-  { id: 'reference', icon: '📌', label: 'Tham khảo' },
 ];
 
 export default function App() {
-  const [tab, setTab] = useState('tasks');
+  const [tab, setTab] = useState(TABS[0].id);
 
   const renderTab = () => {
     switch (tab) {
-      case 'plan': return <PlanView />;
-      case 'tasks': return <TaskTracker />;
-      case 'finance': return <FinanceView />;
-      case 'reference': return <ReferenceView />;
+      case 'tongquan': return <TongQuanView />;
+      case 'kinhdoanh': return <KinhDoanhView />;
+      case 'marketing': return <MarketingView />;
+      case 'lotrinh': return <LoTrinhView />;
+      case 'tasks': return <TasksView />;
       default: return null;
     }
   };
 
-  const currentTab = TABS.find(t => t.id === tab);
-
   return (
     <div className="app">
       <header className="app-header">
-        <h1>FADI × ThoPho</h1>
-        <div className="subtitle">Kế hoạch 4 tuần — 28/03 → 25/04/2026</div>
+        <h1>🎯 MKG LEAN PIVOT v2.0</h1>
+        <div className="subtitle">CEO + Trợ Lý + AI · Bắt đầu 28/03/2026 · 6 Tuần</div>
       </header>
-
-      <main className="app-content">
-        {renderTab()}
-      </main>
-
+      <main className="app-content">{renderTab()}</main>
       <nav className="bottom-nav">
         {TABS.map(t => (
-          <button
-            key={t.id}
-            className={`nav-item ${tab === t.id ? 'active' : ''}`}
-            onClick={() => setTab(t.id)}
-          >
+          <button key={t.id} className={`nav-item ${tab === t.id ? 'active' : ''}`}
+            onClick={() => setTab(t.id)}>
             <span className="nav-icon">{t.icon}</span>
             <span>{t.label}</span>
           </button>

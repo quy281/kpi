@@ -8,9 +8,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'FADI Tracker — Kế Hoạch 4 Tuần',
-        short_name: 'FADI Tracker',
-        description: 'Theo dõi kế hoạch FADI × ThoPho',
+        name: 'MKG Lean Pivot v2.0 — Kế Hoạch 6 Tuần',
+        short_name: 'MKG Pivot',
+        description: 'Kế hoạch thực chiến 6 tuần MKG Lean Pivot',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
@@ -25,5 +25,5 @@ export default defineConfig({
       },
     }),
   ],
-  server: { port: 5180 },
+  server: { host: true },
 })
