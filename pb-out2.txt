@@ -1,0 +1,7 @@
+ERROR TYPE: ClientResponseError 400
+DATA: {
+  "data": {},
+  "message": "Something went wrong while processing your request.",
+  "status": 400
+}
+MSG: Something went wrong while processing your request.

@@ -1,0 +1,8 @@
+SUCCESS
+{
+  "collectionId": "pbc_1986921654",
+  "collectionName": "mkg_pivot_config",
+  "id": "042s5c2783d8qer",
+  "key": "test_key",
+  "value": "test_value"
+}

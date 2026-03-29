@@ -1,0 +1,23 @@
+SUCCESS
+[
+  {
+    "collectionId": "pbc_1986921654",
+    "collectionName": "mkg_pivot_config",
+    "id": "3v7h6f1t82009j5"
+  },
+  {
+    "collectionId": "pbc_1986921654",
+    "collectionName": "mkg_pivot_config",
+    "id": "tynluk6171q0r65"
+  },
+  {
+    "collectionId": "pbc_1986921654",
+    "collectionName": "mkg_pivot_config",
+    "id": "obpq5xczr34fz70"
+  },
+  {
+    "collectionId": "pbc_1986921654",
+    "collectionName": "mkg_pivot_config",
+    "id": "3jy18954pga22vh"
+  }
+]

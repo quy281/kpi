@@ -1,0 +1,14 @@
+SUCCESS
+{
+  "items": [
+    {
+      "collectionId": "pbc_1986921654",
+      "collectionName": "mkg_pivot_config",
+      "id": "3v7h6f1t82009j5"
+    }
+  ],
+  "page": 1,
+  "perPage": 1,
+  "totalItems": 4,
+  "totalPages": 4
+}
