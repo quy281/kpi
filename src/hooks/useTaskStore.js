@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { getConfig, setConfig } from '../services/pb.js';
 
 /* ── Task Groups ── */
 export const GROUPS = {
@@ -8,6 +9,9 @@ export const GROUPS = {
   sprint3: { label: '🟢 Sprint 3 — Tuần 5-6', icon: '🟢', color: '#10b981' },
   creative: { label: '🎨 Creative cần chuẩn bị', icon: '🎨', color: '#a855f7' },
   action: { label: '⚡ Hành động ngay 28/03', icon: '⚡', color: '#ec4899' },
+  profile_ceo: { label: '👤 Profile — CEO chuẩn bị', icon: '👤', color: '#f59e0b' },
+  profile_tl: { label: '🧑‍💼 Profile — Trợ Lý setup', icon: '🧑‍💼', color: '#06b6d4' },
+  profile_maintain: { label: '🔄 Profile — Maintain tuần', icon: '🔄', color: '#8b5cf6' },
 };
 
 const DEFAULT_TASKS = [
@@ -78,23 +82,119 @@ const DEFAULT_TASKS = [
   { id: 'AC_09', group: 'action', text: 'Trợ lý: Soạn bảng giá gói sơn (print + digital)', checked: false, comments: [] },
   { id: 'AC_10', group: 'action', text: 'Trợ lý: Liên hệ 2 thầu phụ sơn CEO giới thiệu', checked: false, comments: [] },
   { id: 'AC_11', group: 'action', text: 'Trợ lý: Đăng 3 bài FB đầu tiên (CEO duyệt)', checked: false, comments: [] },
+
+  // ── Profile — CEO chuẩn bị ──
+  { id: 'PR_CEO_01', group: 'profile_ceo', text: 'Gửi 3-5 link profile/fanpage tham khảo', checked: false, comments: [] },
+  { id: 'PR_CEO_02', group: 'profile_ceo', text: 'Chỉ rõ style muốn lấy', checked: false, comments: [] },
+  { id: 'PR_CEO_03', group: 'profile_ceo', text: 'Gửi 5-10 ảnh thật (chân dung, công trình, team)', checked: false, comments: [] },
+  { id: 'PR_CEO_04', group: 'profile_ceo', text: 'Gửi logo + màu brand', checked: false, comments: [] },
+  { id: 'PR_CEO_05', group: 'profile_ceo', text: 'Duyệt bảng giá', checked: false, comments: [] },
+
+  // ── Profile — Trợ Lý setup (1-2 ngày) ──
+  { id: 'PR_TL_01', group: 'profile_tl', text: 'Tải 30-40 ảnh reference từ các profile CEO gửi', checked: false, comments: [] },
+  { id: 'PR_TL_02', group: 'profile_tl', text: 'Phân loại ảnh A(Portfolio) B(BTS) C(Feedback) D(Lifestyle) E(Infographic)', checked: false, comments: [] },
+  { id: 'PR_TL_03', group: 'profile_tl', text: 'AI edit 15-20 ảnh (đổi áo, logo, xóa watermark)', checked: false, comments: [] },
+  { id: 'PR_TL_04', group: 'profile_tl', text: 'Trộn ảnh AI với ảnh thật CEO (tỷ lệ 40/30/20/10)', checked: false, comments: [] },
+  { id: 'PR_TL_05', group: 'profile_tl', text: 'Viết 20 caption (AI hỗ trợ) → gửi CEO duyệt', checked: false, comments: [] },
+  { id: 'PR_TL_06', group: 'profile_tl', text: 'Setup profile FB: avatar + cover + bio + 7-10 bài', checked: false, comments: [] },
+  { id: 'PR_TL_07', group: 'profile_tl', text: 'Setup fanpage: avatar + cover + about + albums + 10 bài', checked: false, comments: [] },
+  { id: 'PR_TL_08', group: 'profile_tl', text: 'Setup Zalo: avatar + cover + 5-8 nhật ký', checked: false, comments: [] },
+  { id: 'PR_TL_09', group: 'profile_tl', text: 'CEO review tổng → chỉnh nếu cần', checked: false, comments: [] },
+
+  // ── Profile — Maintain tuần ──
+  { id: 'PR_MT_01', group: 'profile_maintain', text: '3-5 bài mới/tuần (xen kẽ A-B-C-D-E)', checked: false, comments: [] },
+  { id: 'PR_MT_02', group: 'profile_maintain', text: 'Đơn thật → chụp ảnh thật → thay dần ảnh AI', checked: false, comments: [] },
+  { id: 'PR_MT_03', group: 'profile_maintain', text: 'Scan đối thủ 1 lần/tuần → ý tưởng mới', checked: false, comments: [] },
 ];
 
 const STORAGE_KEY = 'mkg_pivot_tasks';
+const PB_CONFIG_KEY = 'tasks';
+const SYNC_DEBOUNCE_MS = 1000;
+
+/**
+ * Merge logic: keep user progress (checked, comments) from saved data,
+ * add any new tasks from DEFAULT_TASKS that don't exist yet.
+ */
+function mergeTasks(saved, defaults) {
+  const savedMap = new Map(saved.map(t => [t.id, t]));
+  const merged = [];
+  const seenIds = new Set();
+
+  // Keep order from defaults, but preserve saved state
+  for (const def of defaults) {
+    const existing = savedMap.get(def.id);
+    merged.push(existing || def);
+    seenIds.add(def.id);
+  }
+
+  // Keep any extra tasks from saved that are not in defaults (user-created, etc.)
+  for (const s of saved) {
+    if (!seenIds.has(s.id)) {
+      merged.push(s);
+    }
+  }
+
+  return merged;
+}
 
 export function useTaskStore() {
   const [tasks, setTasks] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) return mergeTasks(JSON.parse(saved), DEFAULT_TASKS);
     } catch {}
     return DEFAULT_TASKS;
   });
 
   const [filter, setFilter] = useState('all');
+  const [syncStatus, setSyncStatus] = useState('idle'); // idle | syncing | synced | error
+  const debounceRef = useRef(null);
+  const initialLoadDone = useRef(false);
 
+  // ── Load from PocketBase on mount ──
+  useEffect(() => {
+    (async () => {
+      try {
+        setSyncStatus('syncing');
+        const pbData = await getConfig(PB_CONFIG_KEY);
+        if (pbData && pbData.value) {
+          const pbTasks = typeof pbData.value === 'string' ? JSON.parse(pbData.value) : pbData.value;
+          if (Array.isArray(pbTasks) && pbTasks.length > 0) {
+            const merged = mergeTasks(pbTasks, DEFAULT_TASKS);
+            setTasks(merged);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          }
+        }
+        setSyncStatus('synced');
+      } catch {
+        setSyncStatus('error');
+        // Fallback: use localStorage data (already loaded in useState init)
+      }
+      initialLoadDone.current = true;
+    })();
+  }, []);
+
+  // ── Save to localStorage + debounced PocketBase sync ──
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+
+    // Don't sync to PB during initial load
+    if (!initialLoadDone.current) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        setSyncStatus('syncing');
+        await setConfig(PB_CONFIG_KEY, JSON.stringify(tasks));
+        setSyncStatus('synced');
+      } catch {
+        setSyncStatus('error');
+      }
+    }, SYNC_DEBOUNCE_MS);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [tasks]);
 
   const toggleTask = useCallback((id) => {
@@ -138,5 +238,5 @@ export function useTaskStore() {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  return { tasks: filteredTasks, allTasks: tasks, toggleTask, addComment, deleteComment, stats, groupStats, filter, setFilter, resetTasks };
+  return { tasks: filteredTasks, allTasks: tasks, toggleTask, addComment, deleteComment, stats, groupStats, filter, setFilter, resetTasks, syncStatus };
 }

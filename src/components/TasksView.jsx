@@ -140,14 +140,46 @@ Break-even = 40M ÷ 32% = 125M DT/tháng
   );
 }
 
+/* ── Focus Board ── */
+function PersonaFocusBox({ allTasks, toggleTask, addComment, deleteComment, title, icon, color, filterFn }) {
+  const groupOrder = ['action', 'profile_ceo', 'profile_tl', 'profile_maintain', 'sprint1', 'sprint2', 'sprint3', 'sprint0', 'creative'];
+  
+  const pendingTasks = allTasks.filter(t => !t.checked && filterFn(t));
+  
+  pendingTasks.sort((a, b) => {
+    const idxA = groupOrder.indexOf(a.group);
+    const idxB = groupOrder.indexOf(b.group);
+    return (idxA > -1 ? idxA : 99) - (idxB > -1 ? idxB : 99);
+  });
+
+  const top5 = pendingTasks.slice(0, 5);
+  if (top5.length === 0) return null;
+
+  return (
+    <div className="persona-card" style={{ marginBottom: 16, borderColor: color }}>
+      <div className="persona-name" style={{ color: color, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span>{icon}</span> <span>{title} Focus</span>
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 12px' }}>
+        Tự soát liên-dự-án. Đánh dấu xong, task mới sẽ tự đẩy lên (Top 5):
+      </div>
+      <div className="group-items" style={{ padding: 0 }}>
+        {top5.map(t => (
+          <TaskItem key={t.id} task={t} onToggle={toggleTask} onComment={addComment} onDeleteComment={deleteComment} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── Main TasksView ── */
 export default function TasksView() {
-  const { tasks, allTasks, toggleTask, addComment, deleteComment, stats, groupStats, filter, setFilter } = useTaskStore();
+  const { tasks, allTasks, toggleTask, addComment, deleteComment, stats, groupStats, filter, setFilter, syncStatus } = useTaskStore();
   const [openGroups, setOpenGroups] = useState({ action: true });
   const [showFinance, setShowFinance] = useState(false);
   const toggleGroup = (id) => setOpenGroups(p => ({ ...p, [id]: !p[id] }));
 
-  const groupOrder = ['action', 'sprint1', 'sprint2', 'sprint3', 'sprint0', 'creative'];
+  const groupOrder = ['action', 'profile_ceo', 'profile_tl', 'profile_maintain', 'sprint1', 'sprint2', 'sprint3', 'sprint0', 'creative'];
 
   return (
     <div className="fade-in">
@@ -157,6 +189,14 @@ export default function TasksView() {
         <span className="progress-value">{stats.done}/{stats.total} ({stats.percent}%)</span>
       </div>
       <div className="progress-bar"><div className="progress-fill" style={{ width: `${stats.percent}%` }} /></div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+        <span style={{
+          fontSize: 10, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4,
+          color: syncStatus === 'synced' ? 'var(--green)' : syncStatus === 'syncing' ? 'var(--accent)' : syncStatus === 'error' ? 'var(--red)' : 'var(--text-muted)',
+        }}>
+          {syncStatus === 'synced' ? '☁️ Đã sync' : syncStatus === 'syncing' ? '⏳ Đang sync...' : syncStatus === 'error' ? '⚠️ Lỗi sync' : ''}
+        </span>
+      </div>
 
       {/* Stats */}
       <div className="stats-row" style={{ marginTop: 16 }}>
@@ -185,6 +225,15 @@ export default function TasksView() {
             onClick={() => setFilter(f.id)}>{f.label}</button>
         ))}
       </div>
+
+      {/* Focus Boards */}
+      <PersonaFocusBox allTasks={allTasks} toggleTask={toggleTask} addComment={addComment} deleteComment={deleteComment}
+        title="CEO" icon="👔" color="var(--accent)"
+        filterFn={t => !t.text.toLowerCase().includes('trợ lý') && !['profile_tl', 'profile_maintain'].includes(t.group)} />
+        
+      <PersonaFocusBox allTasks={allTasks} toggleTask={toggleTask} addComment={addComment} deleteComment={deleteComment}
+        title="Trợ Lý" icon="🧑‍💼" color="var(--cyan)"
+        filterFn={t => t.text.toLowerCase().includes('trợ lý') || ['profile_tl', 'profile_maintain'].includes(t.group)} />
 
       {/* Task Groups */}
       {groupOrder.map(gid => {

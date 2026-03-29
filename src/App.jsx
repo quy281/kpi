@@ -4,6 +4,7 @@ import KinhDoanhView from './components/KinhDoanhView.jsx';
 import MarketingView from './components/MarketingView.jsx';
 import LoTrinhView from './components/LoTrinhView.jsx';
 import TasksView from './components/TasksView.jsx';
+import ProfileView from './components/ProfileView.jsx';
 import './styles/index.css';
 
 const TABS = [
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'marketing', icon: '📣', label: 'Marketing' },
   { id: 'lotrinh', icon: '📅', label: 'Lộ Trình' },
   { id: 'tasks', icon: '✅', label: 'Tasks' },
+  { id: 'profile', icon: '👤', label: 'Profile' },
 ];
 
 export default function App() {
@@ -24,6 +26,7 @@ export default function App() {
       case 'marketing': return <MarketingView />;
       case 'lotrinh': return <LoTrinhView />;
       case 'tasks': return <TasksView />;
+      case 'profile': return <ProfileView />;
       default: return null;
     }
   };
